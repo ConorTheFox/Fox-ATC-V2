@@ -1,24 +1,19 @@
 import subprocess
 import json
 import vosk
-import argparse
 import datetime
+import requests
 from colorama import init, Fore
 
 # Initialize colorama
 init(autoreset=True)
-
-# Set up argument parser
-parser = argparse.ArgumentParser(description='Stream audio from a URL and transcribe it live.')
-parser.add_argument('url', type=str, help='The URL of the audio stream.')
-args = parser.parse_args()
 
 # Set up the Vosk model
 model_path = "Models/vosk-model-en-us-0.22"
 model = vosk.Model(model_path)
 
 # Define the FFMPEG command to stream audio from the URL with audio processing filters
-audio_url = args.url
+audio_url = "http://d.liveatc.net/ksan1_twr"
 ffmpeg_command = [
     "ffmpeg",
     "-loglevel", "quiet",   # Suppress FFMPEG output
@@ -52,6 +47,19 @@ def format_output(text, type):
     else:
         return Fore.BLUE + f"[{timestamp}] [Partial] {text}"
 
+# Function to send messages to the Node.js server
+def send_message(message):
+    url = 'http://localhost:3000/message'
+    headers = {'Content-Type': 'text/plain'}
+    try:
+        response = requests.post(url, data=message, headers=headers)
+        if response.status_code == 200:
+            print(Fore.GREEN + 'Message sent successfully')
+        else:
+            print(Fore.RED + f'Failed to send message: {response.status_code} - {response.text}')
+    except Exception as e:
+        print(Fore.RED + f'Error sending message: {e}')
+
 # Read audio from the FFMPEG process and transcribe it
 try:
     while True:
@@ -65,6 +73,7 @@ try:
             text = json.loads(result).get("text", "")
             if text:  # Only print if text is not empty
                 print(format_output(text, "result"))
+                send_message(text)  # Send the complete message to the Node.js server
         else:
             partial_result = recognizer.PartialResult()
             partial_text = json.loads(partial_result).get("partial", "")
