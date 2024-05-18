@@ -50,7 +50,9 @@ body {
     border-radius: 15px;
     padding: 20px;
     margin-top: 20px;
-    overflow-y: auto;
+    overflow: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none;
 }
 
 .message {

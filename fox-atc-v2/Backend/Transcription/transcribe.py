@@ -13,7 +13,7 @@ model_path = "Models/vosk-model-en-us-0.22"
 model = vosk.Model(model_path)
 
 # Define the FFMPEG command to stream audio from the URL with audio processing filters
-audio_url = "http://d.liveatc.net/ksan1_twr"
+audio_url = "http://d.liveatc.net/klax_twr"
 ffmpeg_command = [
     "ffmpeg",
     "-loglevel", "quiet",   # Suppress FFMPEG output
