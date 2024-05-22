@@ -1,44 +1,48 @@
-import subprocess
-import os
-import sys
-from demucs.apply import apply_model
-from demucs.pretrained import get_model
+import ffmpeg
+import io
+import numpy as np
+from pydub import AudioSegment
+import noisereduce as nr
+from scipy.io.wavfile import write
 
-def stream_audio_and_isolate(url, output_dir):
-    # Ensure the output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+# Function to stream audio using ffmpeg
+def stream_audio(file_path):
+    out, _ = (
+        ffmpeg
+        .input(file_path)
+        .output('pipe:', format='wav')
+        .run(capture_stdout=True, capture_stderr=True)
+    )
+    return out
+
+# Function to reduce noise using noisereduce
+def reduce_noise(audio_segment):
+    samples = np.array(audio_segment.get_array_of_samples())
+    # Ensure stereo to mono conversion if needed
+    if audio_segment.channels > 1:
+        samples = samples.reshape((-1, audio_segment.channels)).mean(axis=1)
+    # Apply noise reduction
+    reduced_noise_samples = nr.reduce_noise(y=samples, sr=audio_segment.frame_rate)
+    # Convert back to AudioSegment
+    reduced_audio_segment = audio_segment._spawn(reduced_noise_samples.astype(np.int16).tobytes())
+    return reduced_audio_segment
+
+def main():
+    file_path = 'test.wav'
     
-    # FFMPEG command to stream audio and save it to a file
-    ffmpeg_command = [
-        'ffmpeg',
-        '-i', url,
-        '-f', 'wav',
-        '-ac', '1',  # mono audio
-        '-ar', '44100',  # sample rate
-        os.path.join(output_dir, 'stream.wav')
-    ]
-    
-    # Run the FFMPEG command
-    process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    try:
-        print("Streaming audio...")
-        process.communicate()
-    except KeyboardInterrupt:
-        process.kill()
-        print("Streaming stopped.")
+    print("Streaming audio from file...")
+    audio_data = stream_audio(file_path)
 
-    # Load the pre-trained Demucs model
-    model = get_model('htdemucs')
+    print("Processing audio with pydub...")
+    audio_segment = AudioSegment.from_wav(io.BytesIO(audio_data))
 
-    # Path to the streamed audio file
-    input_path = os.path.join(output_dir, 'stream.wav')
+    print("Reducing noise and isolating voice...")
+    clean_audio = reduce_noise(audio_segment)
 
-    # Isolate vocals using Demucs
-    print("Isolating vocals...")
-    apply_model(model, input_path, output_dir, shifts=1)
+    print("Exporting cleaned audio to clean.wav...")
+    clean_audio.export("clean.wav", format="wav")
+
+    print("Processing complete. clean.wav saved.")
 
 if __name__ == "__main__":
-    audio_stream_url = 'http://d.liveatc.net/klax_twr'
-    output_directory = 'output'
-    
-    stream_audio_and_isolate(audio_stream_url, output_directory)
+    main()

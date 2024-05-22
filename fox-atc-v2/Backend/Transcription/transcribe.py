@@ -9,7 +9,7 @@ from colorama import init, Fore
 init(autoreset=True)
 
 # Set up the Vosk model
-model_path = "Models/vosk-model-en-us-0.22"
+model_path = "Models/vosk-model-en-us-daanzu-20200905"
 model = vosk.Model(model_path)
 
 # Define the FFMPEG command to stream audio from the URL with audio processing filters
@@ -22,7 +22,7 @@ ffmpeg_command = [
     "-ac", "1",             # Number of audio channels
     "-ar", "16000",         # Sample rate
     "-af",
-    "highpass=f=400,lowpass=f=4000,deesser=i=0.5:m=0.5:f=0.5,equalizer=f=1000:t=q:w=1:g=8,equalizer=f=3000:t=q:w=1:g=8",
+    "afftdn=nf=-25,highpass=f=300,lowpass=f=3000",  # Updated filters
     "-"                     # Output to stdout
 ]
 
