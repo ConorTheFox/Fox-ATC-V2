@@ -1,3 +1,4 @@
+# Imports
 import subprocess
 import json
 import vosk
@@ -9,7 +10,7 @@ from colorama import init, Fore
 init(autoreset=True)
 
 # Set up the Vosk model
-model_path = "Models/vosk-model-en-us-daanzu-20200905"
+model_path = "Models/vosk-model-en-us-0.22"
 model = vosk.Model(model_path)
 
 # Define the FFMPEG command to stream audio from the URL with audio processing filters
@@ -21,8 +22,6 @@ ffmpeg_command = [
     "-f", "wav",            # Output format
     "-ac", "1",             # Number of audio channels
     "-ar", "16000",         # Sample rate
-    "-af",
-    "afftdn=nf=-25,highpass=f=300,lowpass=f=3000",  # Updated filters
     "-"                     # Output to stdout
 ]
 
