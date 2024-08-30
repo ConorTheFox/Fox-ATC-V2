@@ -48,7 +48,7 @@ server.listen(PORT, () => {
 
 // --- WebSocket Server --- //
 
-// WebSocket Server Connection
+// Websocket Connection
 wss.on("connection", (ws) => {
     // Log Connection
     console.log("Client Connected!");
